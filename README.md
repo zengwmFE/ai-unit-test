@@ -24,3 +24,26 @@ To speed up generation, files are processed in parallel. You can control concurr
 ```bash
 export GENERATE_CONCURRENCY=5  # default is 3
 ```
+
+## Configuration (whitelist & blacklist)
+
+You can control which files are processed via `ai-unit-test.config.json` in this project root.
+
+- **includePatterns**: whitelist of folders / files (glob, relative to the React project root passed on the CLI)
+- **excludePatterns**: blacklist of folders / files (glob, relative to the React project root)
+
+Example:
+
+```json
+{
+  "includePatterns": [
+    "src/components/**/*.js",
+    "src/data/**/*.js"
+  ],
+  "excludePatterns": [
+    "**/*.test.js",
+    "src/components/__generated__/**",
+    "src/components/**/stories/**"
+  ]
+}
+```

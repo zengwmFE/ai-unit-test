@@ -26,12 +26,61 @@ const llm = new ChatOpenAI({
   },
 });
 
+function loadConfig() {
+  const defaultConfig = {
+    // 需要处理的白名单（相对于被扫描的 React 项目根目录）
+    includePatterns: [
+      "src/components/**/*.js",
+      "src/data/**/*.js",
+    ],
+    // 不需要处理的黑名单（文件或文件夹都可以用 glob 表达）
+    excludePatterns: [
+      "**/*.test.js",
+    ],
+  };
+
+  const configPath = path.resolve(process.cwd(), "unit-test.config.json");
+  if (!fs.existsSync(configPath)) {
+    return defaultConfig;
+  }
+
+  try {
+    const raw = fs.readFileSync(configPath, "utf-8");
+    const userConfig = JSON.parse(raw);
+    return {
+      includePatterns:
+        Array.isArray(userConfig.includePatterns) &&
+        userConfig.includePatterns.length > 0
+          ? userConfig.includePatterns
+          : defaultConfig.includePatterns,
+      excludePatterns: Array.isArray(userConfig.excludePatterns)
+        ? userConfig.excludePatterns
+        : defaultConfig.excludePatterns,
+    };
+  } catch (e) {
+    console.error(
+      "Failed to read ai-unit-test.config.json, using default patterns.",
+      e
+    );
+    return defaultConfig;
+  }
+}
+
 function gatherFiles(baseDir) {
-  const components = globSync(`${baseDir}/src/components/**/*.js`);
-  const data = globSync(`${baseDir}/src/data/**/*.js`);
-  const all = [...components, ...data];
-  // 排除已经是测试文件的 .test.js
-  return all.filter((file) => !file.endsWith(".test.js"));
+  const { includePatterns, excludePatterns } = loadConfig();
+
+  const includedFiles = includePatterns.flatMap((pattern) =>
+    globSync(path.join(baseDir, pattern), { nodir: true })
+  );
+
+  const excludedSet = new Set(
+    excludePatterns.flatMap((pattern) =>
+      globSync(path.join(baseDir, pattern), { nodir: true })
+    )
+  );
+
+  const uniqueIncluded = Array.from(new Set(includedFiles));
+  return uniqueIncluded.filter((file) => !excludedSet.has(file));
 }
 
 // 从大模型输出中提取可执行的测试代码（去掉 Markdown、说明文字等）
@@ -100,7 +149,7 @@ async function main() {
   console.log(`Scanning project at ${projectDir}`);
 
   const files = gatherFiles(projectDir);
-  console.log(`Found ${files.length} source files in components/ and data/`);
+  console.log(`Found ${files.length} source files by config patterns`);
 
   const CONCURRENCY = Number(process.env.GENERATE_CONCURRENCY || 3);
   let index = 0;
@@ -125,7 +174,11 @@ async function main() {
         }
 
         const { dir, name } = path.parse(file);
-        const testFilePath = path.join(dir, `${name}.test.js`);
+        const testDir = path.join(dir, "__tests__");
+        if (!fs.existsSync(testDir)) {
+          fs.mkdirSync(testDir, { recursive: true });
+        }
+        const testFilePath = path.join(testDir, `${name}.test.js`);
         fs.writeFileSync(testFilePath, tests, "utf-8");
         console.log(
           `[Worker ${workerId}] Saved tests to ${testFilePath}`

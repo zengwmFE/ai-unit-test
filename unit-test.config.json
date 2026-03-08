@@ -1,0 +1,12 @@
+{
+  "//_comment": "AI 单测生成配置：白名单（includePatterns）和黑名单（excludePatterns）都是相对于 React 项目根目录的 glob。",
+  "includePatterns": [
+    "src/components/**/*.js",
+    "src/data/**/*.js"
+  ],
+  "excludePatterns": [
+    "**/*.test.js",
+    "src/components/__generated__/**",
+    "src/components/**/stories/**"
+  ]
+}
