@@ -115,7 +115,7 @@ function extractTestCode(rawContent) {
     .trim();
 }
 
-async function generateTestsForFile(filePath) {
+async function generateTestsForFile(filePath, importPath) {
   const content = fs.readFileSync(filePath, "utf-8");
   const prompt =
     "你是一个前端测试专家。" +
@@ -124,7 +124,8 @@ async function generateTestsForFile(filePath) {
     "1) 只返回纯 JavaScript 测试代码；" +
     "2) 不要任何解释说明文字；" +
     "3) 不要用 ``` ``` 或 Markdown 包裹；" +
-    "4) 代码能被 Jest 直接执行。\n\n" +
+    "4) 代码能被 Jest 直接执行；" +
+    `5) 组件或模块的导入路径必须使用相对于测试文件的路径 "${importPath}"，例如：import Component from "${importPath}";。\n\n` +
     content;
 
   try {
@@ -167,14 +168,19 @@ async function main() {
       );
 
       try {
-        const tests = await generateTestsForFile(file);
+        const { dir, name } = path.parse(file);
+        const testDir = path.join(dir, "__tests__");
+        const importPath = path
+          .relative(testDir, file)
+          .replace(/\\/g, "/")
+          .replace(/\.js$/, "");
+
+        const tests = await generateTestsForFile(file, importPath);
         if (!tests) {
           console.warn(`[Worker ${workerId}] Empty tests for ${file}, skip.`);
           continue;
         }
 
-        const { dir, name } = path.parse(file);
-        const testDir = path.join(dir, "__tests__");
         if (!fs.existsSync(testDir)) {
           fs.mkdirSync(testDir, { recursive: true });
         }
