@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "description": "Generates unit tests for a React project by leveraging OpenAI",
   "type": "module",
-  "main": "index.js",
+  "main": "./index.js",
   "scripts": {
-    "generate": "node index.js"
+    "generate": "node ./src/index.js"
   },
   "dependencies": {
     "@langchain/openai": "^1.2.12",
