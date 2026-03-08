@@ -1,0 +1,15 @@
+{
+  "name": "ai-unit-test",
+  "version": "0.1.0",
+  "description": "Generates unit tests for a React project by leveraging OpenAI",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "generate": "node index.js"
+  },
+  "dependencies": {
+    "@langchain/openai": "^1.2.12",
+    "glob": "^10.5.0",
+    "openai": "^4.0.1"
+  }
+}
