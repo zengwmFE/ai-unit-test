@@ -31,6 +31,8 @@ You can control which files are processed via `ai-unit-test.config.json` in this
 
 - **includePatterns**: whitelist of folders / files (glob, relative to the React project root passed on the CLI)
 - **excludePatterns**: blacklist of folders / files (glob, relative to the React project root)
+- **changeDetection**: `"git" | "missing" | "mtime" | "all"` (default `"git"`)
+- **gitBaseRef** / **gitHeadRef**: used when `changeDetection="git"` (default `origin/main` and `HEAD`)
 
 Example:
 
@@ -44,6 +46,9 @@ Example:
     "**/*.test.js",
     "src/components/__generated__/**",
     "src/components/**/stories/**"
-  ]
+  ],
+  "changeDetection": "git",
+  "gitBaseRef": "origin/main",
+  "gitHeadRef": "HEAD"
 }
 ```

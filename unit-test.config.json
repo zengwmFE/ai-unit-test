@@ -8,5 +8,8 @@
     "**/*.test.js",
     "src/components/__generated__/**",
     "src/components/**/stories/**"
-  ]
+  ],
+  "changeDetection": "git",
+  "gitBaseRef": "origin/main",
+  "gitHeadRef": "HEAD"
 }

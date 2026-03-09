@@ -20,13 +20,14 @@ function ensureDirExists(dir) {
   }
 }
 
-async function processFile(file, workerId) {
-  console.log(
-    `\n[Worker ${workerId}] --- Generating tests for ${file} ---\n`
-  );
+async function processFile({
+  file,
+  workerId,
+}) {
+  const { testDir, testFilePath, importPath } = getTestPaths(file);
+  console.log(`\n[Worker ${workerId}] --- Generating tests for ${file} ---\n`);
 
   try {
-    const { testDir, testFilePath, importPath } = getTestPaths(file);
     const tests = await generateTestsForFile(file, importPath);
     if (!tests) {
       console.warn(`[Worker ${workerId}] Empty tests for ${file}, skip.`);
@@ -44,7 +45,10 @@ async function processFile(file, workerId) {
   }
 }
 
-export async function runWorkers(files, concurrency) {
+export async function runWorkers({
+  files,
+  concurrency,
+}) {
   const CONCURRENCY = Math.min(concurrency, files.length || 1);
   let index = 0;
 
@@ -56,7 +60,10 @@ export async function runWorkers(files, concurrency) {
       index += 1;
 
       const file = files[currentIndex];
-      await processFile(file, workerId);
+      await processFile({
+        file,
+        workerId,
+      });
     }
   }
 

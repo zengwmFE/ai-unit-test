@@ -76,6 +76,7 @@ export async function generateTestsForFile(filePath, importPath) {
               typeof c === "string" ? c : (c.text ?? c.toString())
             )
             .join("\n");
+    console.log(aiMsg, 'aiMsg-----------`')
     return extractTestCode(raw);
   } catch (err) {
     console.error(`Model API error for ${filePath}:`, err);
