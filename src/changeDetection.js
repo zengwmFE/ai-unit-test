@@ -1,74 +1,16 @@
 import fs from "fs";
 import path from "path";
-import { execSync } from "node:child_process";
 import { getTestPaths } from "./generator.js";
+import { gitChangedFilesTool, gitIsRepoTool } from "./gitTools.js";
 
-function runGit(projectDir, args) {
-  const cmd = ["git", "-C", projectDir, ...args].join(" ");
-  return execSync(cmd, { encoding: "utf-8", stdio: ["ignore", "pipe", "pipe"] });
-}
-
-function splitLines(s) {
-  return s
-    .split("\n")
-    .map((x) => x.trim())
-    .filter(Boolean);
-}
-
-export function isGitRepo(projectDir) {
+export async function isGitRepo(projectDir) {
+  const res = await gitIsRepoTool.invoke({ projectDir: projectDir });
   try {
-    const out = runGit(projectDir, ["rev-parse", "--is-inside-work-tree"]).trim();
-    return out === "true";
+    const parsed = JSON.parse(res || "{}");
+    return !!parsed.isRepo;
   } catch {
     return false;
   }
-}
-
-export function getGitChangedFiles({
-  projectDir,
-  baseRef = "origin/main",
-  headRef = "HEAD",
-}) {
-  // 返回相对于 projectDir 的路径（posix），再由调用方转绝对路径
-  const changed = new Set();
-
-  // 1) 提交范围内的变更
-  try {
-    const rangeOut = runGit(projectDir, [
-      "diff",
-      "--name-only",
-      "--diff-filter=AMR",
-      `${baseRef}...${headRef}`,
-    ]);
-    splitLines(rangeOut).forEach((p) => changed.add(p));
-  } catch {
-    // baseRef 不存在等情况，直接忽略范围 diff，后面仍会合并工作区变更
-  }
-
-  // 2) 工作区未暂存变更
-  try {
-    const out = runGit(projectDir, ["diff", "--name-only", "--diff-filter=AMR"]);
-    splitLines(out).forEach((p) => changed.add(p));
-  } catch {}
-
-  // 3) 暂存区变更
-  try {
-    const out = runGit(projectDir, [
-      "diff",
-      "--name-only",
-      "--diff-filter=AMR",
-      "--cached",
-    ]);
-    splitLines(out).forEach((p) => changed.add(p));
-  } catch {}
-
-  // 4) 未跟踪的新文件
-  try {
-    const out = runGit(projectDir, ["ls-files", "--others", "--exclude-standard"]);
-    splitLines(out).forEach((p) => changed.add(p));
-  } catch {}
-
-  return changed;
 }
 
 export function filterFilesByMissingTests(files) {
@@ -92,13 +34,15 @@ export function filterFilesByMtime(files) {
   });
 }
 
-export function filterFilesByGitChanges({
+export async function filterFilesByGitChanges({
   files,
   projectDir,
   baseRef,
   headRef,
 }) {
-  const changedRel = getGitChangedFiles({ projectDir, baseRef, headRef });
+  const res = await gitChangedFilesTool.invoke({ projectDir, baseRef, headRef });
+  const { files: changedRel = [] } = JSON.parse(res || "{}");
+
   const changedAbs = new Set(
     Array.from(changedRel).map((rel) =>
       path.resolve(projectDir, rel).replace(/\\/g, "/")

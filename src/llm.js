@@ -1,5 +1,5 @@
-import fs from "fs";
 import { ChatOpenAI } from "@langchain/openai";
+import { readFileForModel } from "./fsTools.js";
 
 const apiKey = process.env.DASHSCOPE_API_KEY;
 if (!apiKey) {
@@ -63,7 +63,8 @@ function buildPrompt(content, importPath) {
 }
 
 export async function generateTestsForFile(filePath, importPath) {
-  const content = fs.readFileSync(filePath, "utf-8");
+  // 通过 LangChain Tool 读取源码，便于后续接 Agent
+  const content = await readFileForModel(filePath, "utf-8");
   const prompt = buildPrompt(content, importPath);
 
   try {

@@ -27,7 +27,7 @@ async function main() {
   } else if (mode === "mtime") {
     files = filterFilesByMtime(files);
   } else if (mode === "git") {
-    const canUseGit = isGitRepo(projectDir);
+    const canUseGit = await isGitRepo(projectDir);
     if (!canUseGit) {
       console.warn(
         `Not a git repo: ${projectDir}. Fallback to changeDetection="missing".`
@@ -35,7 +35,7 @@ async function main() {
       files = filterFilesByMissingTests(files);
     } else {
       try {
-        files = filterFilesByGitChanges({
+        files = await filterFilesByGitChanges({
           files,
           projectDir,
           baseRef: config.gitBaseRef,
